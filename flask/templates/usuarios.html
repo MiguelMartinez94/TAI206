@@ -37,11 +37,12 @@
             <td>{{ u.edad }}</td>
             <td>
                 <a href="/actualizar/{{u.id}}">Actualizar</a>
-                <form action="" method="POST">
+                <form action="/eliminar/{{u.id}}" method="POST">
                     <input type="submit" value="Eliminar">
                 </form>
             </td>
-        </tr> {% endfor %}
+        </tr> 
+        {% endfor %}
     </tbody>
 </table>
 

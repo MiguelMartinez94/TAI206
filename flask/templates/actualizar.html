@@ -7,12 +7,14 @@
 </head>
 <body>
 
-    {%for u in usuario%}
-    <form action="/actualizar" method="post">
-        <input type="text" name="id" value="{{u.id}}">
-        <input type="text" name="nombre" value="{{u.nombre}}">
-        <input type="text" name="edad" value="{{u.edad}}">
+    <h1>Actualziar Usuario</h1>
+
+    <form action="/update" method="post">
+        <input type="hidden" name="id" value="{{usuario.id}}">
+        <input type="text" name="nombre" value="{{usuario.nombre}}">
+        <input type="text" name="edad" value="{{usuario.edad}}">
+        <input type="submit" value="Actualizar">
     </form>
-    {%endfor%}
+    
 </body>
 </html>
