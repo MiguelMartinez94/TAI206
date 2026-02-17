@@ -1,0 +1,19 @@
+FROM python:3.12-slim
+
+#Crear carptea de trabajo
+WORKDIR /app
+
+#Copia de los requerimientos
+COPY requiriments.txt .
+
+#Instalación
+RUN pip install --no-cache-dir -r requiriments.txt
+
+#Copiar el cóidgo del proyecto
+COPY ./app ./app
+
+#Exponer el puerto de trabajo
+EXPOSE 5000
+
+#Comandos para ejecutar FAST API
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000", "--reload"]

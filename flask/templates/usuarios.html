@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios</title>
+</head>
+<body>
+    
+    <h1>Agregar Usuarios</h1>
+
+    <form action="/agregar" method="post">
+        <input type="text" placeholder="ID" name="id">
+        <input type="text" placeholder="Nombre" name="nombre">
+        <input type="text" placeholder="Edad" name="edad">
+
+        <button type="submit">Agregar</button>
+    </form>
+
+    <h2>Lista de Usuarios</h2>
+
+    <table>
+    <thead>
+        <tr> <th>ID</th>
+            <th>Nombre</th>
+            <th>Edad</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in usuarios %}
+        <tr> 
+            <td>
+                {{ u.id }}
+            </td>
+            <td>{{ u.nombre }}</td>
+            <td>{{ u.edad }}</td>
+            <td>
+                <a href="/actualizar/{{u.id}}">Actualizar</a>
+                <form action="" method="POST">
+                    <input type="submit" value="Eliminar">
+                </form>
+            </td>
+        </tr> {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>
