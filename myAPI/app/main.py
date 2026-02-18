@@ -2,6 +2,7 @@
 from fastapi import FastAPI, HTTPException, status
 import asyncio  
 from typing import Optional
+from pydantic import BaseModel, Field
 #Inicialización del servidor
 app = FastAPI(
     title = 'Mi primer API',
@@ -31,6 +32,14 @@ usuarios = [
     },
 ]
 
+#Modelo de validacion Pydantic
+
+class UsuarioBase(BaseModel):
+    id: int = Field(...,gt=0, description="Identificador de usuario", example="1")
+    nombre: str = Field(...,min_length=3, max_length=50, description="Nombre del usuario")
+    edad: int = Field(..., ge=0, le=121, description="Edad validad 0 y 121")
+    
+    
 #Endpoints
 #@app.get('/', tags=['Inicio'])
 #async def holamundo():
@@ -67,9 +76,9 @@ async def consultarUsuarios():
     return usuarios
     
 @app.post("/v1/usuarios/", tags=['CRUD Usuarios'])
-async def agregar_usuarios(usuario:dict):
+async def agregar_usuarios(usuario:UsuarioBase):
     for usr in usuarios:
-        if usr["id"] == usuario.get("id"):
+        if usr["id"] == usuario.id:
             
             raise HTTPException(
                 status_code=400, #Un error del cliente
@@ -84,7 +93,7 @@ async def agregar_usuarios(usuario:dict):
     }
     
 @app.put("/v1/usuarios/{id}", tags = ['CRUD Usuarios'])
-async def actualizar_usuarios(id:int, usuario:dict):
+async def actualizar_usuarios(id:int, usuario:UsuarioBase):
     for user in usuarios:
         if user["id"] == id:
             
