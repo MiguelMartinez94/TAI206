@@ -89,7 +89,7 @@ async def agregar_usuarios(usuario:UsuarioBase):
     return {
         "mensaje":"Usuario agregado",
         "datos":usuario,
-        "status":"200"
+        "status":201
     }
     
 @app.put("/v1/usuarios/{id}", tags = ['CRUD Usuarios'])
@@ -132,4 +132,4 @@ async def eliminar_usuario(id:int):
         detail="El usuario no existe"
     )
         
-    
+
