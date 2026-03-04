@@ -3,8 +3,9 @@ from fastapi import FastAPI, HTTPException, status, Depends
 import asyncio  
 from typing import Optional
 from pydantic import BaseModel, Field
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-import secrets
+import jwt
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pwdlib import PasswordHash
 
 #Inicialización del servidor
 app = FastAPI(
@@ -13,6 +14,10 @@ app = FastAPI(
     version = '1.0'
     
 )
+
+SECRET_KEY = "12345678"
+ALGORITHM = "HS256"
+hash_password = PasswordHash.recommended()
 
 usuarios = [
     
@@ -35,6 +40,14 @@ usuarios = [
     },
 ]
 
+accesos = [
+    {
+        "usuario": "miguel",
+        "contraseña": hash_password.hash("12345678")
+    }
+]
+
+oauth2_esquema = OAuth2PasswordBearer(tokenUrl="autorizacion")
 #Modelo de validacion Pydantic
 
 class UsuarioBase(BaseModel):
@@ -44,21 +57,16 @@ class UsuarioBase(BaseModel):
 
 #Seguridad con HTTP Basic
 
-security = HTTPBasic()
 
-def verificar_peticion(credentials: HTTPBasicCredentials=Depends(security)):
-    usuario_auth= secrets.compare_digest(credentials.username, "admin")
-    pass_auth= secrets.compare_digest(credentials.password, "1234")
-    
-    if not (usuario_auth and pass_auth):
-        raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, detail="Sácate de aquí, no tienes autorización")
-
-    return credentials.username
 
 #Endpoints
 #@app.get('/', tags=['Inicio'])
 #async def holamundo():
 #    return {"mensaje":"Hola mundo con FastAPI"}
+
+@app.post("/autorizacion", tags="Autenticacion")
+async def autorizacion(form_data: OAuth2PasswordRequestForm = Depends()):
+    acceso = accesos.get(form_data.usuario)
 
 @app.get("/bienvenidos", tags=['Inicio'])
 async def bienvenido():
@@ -146,5 +154,3 @@ async def eliminar_usuario(id:int, usuario_auth:str = Depends(verificar_peticion
         status_code=404,
         detail="El usuario no existe"
     )
-        
-
