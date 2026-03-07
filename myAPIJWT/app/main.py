@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 import jwt
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pwdlib import PasswordHash
+from datetime import datetime, timedelta, timezone
 
 #Inicialización del servidor
 app = FastAPI(
@@ -40,14 +41,15 @@ usuarios = [
     },
 ]
 
-accesos = [
-    {
+accesos = {
+    "miguel": {
         "usuario": "miguel",
-        "contraseña": hash_password.hash("12345678")
-    }
-]
+        "contraseña_hash": hash_password.hash("12345678")
+    }}
+
 
 oauth2_esquema = OAuth2PasswordBearer(tokenUrl="autorizacion")
+
 #Modelo de validacion Pydantic
 
 class UsuarioBase(BaseModel):
@@ -55,8 +57,22 @@ class UsuarioBase(BaseModel):
     nombre: str = Field(...,min_length=3, max_length=50, description="Nombre del usuario")
     edad: int = Field(..., ge=0, le=121, description="Edad validad 0 y 121")
 
-#Seguridad con HTTP Basic
-
+async def obtener_usuario_actual(token:str = Depends(oauth2_esquema)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        usuario: str = payload.get("sub")
+        if usuario is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Token inválido"
+            )
+        return usuario
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail="Token inválido o expirado"
+        )
 
 
 #Endpoints
@@ -64,9 +80,29 @@ class UsuarioBase(BaseModel):
 #async def holamundo():
 #    return {"mensaje":"Hola mundo con FastAPI"}
 
-@app.post("/autorizacion", tags="Autenticacion")
+@app.post("/autorizacion", tags=["Autenticacion"])
 async def autorizacion(form_data: OAuth2PasswordRequestForm = Depends()):
-    acceso = accesos.get(form_data.usuario)
+    acceso = accesos.get(form_data.username)
+    
+    if not acceso or not hash_password.verify(form_data.password, acceso["contraseña_hash"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+        
+    hora_expiracion = datetime.now(timezone.utc) + timedelta(minutes=1)
+    payload = {
+        "sub":acceso["usuario"],
+        "exp":hora_expiracion
+    }
+    
+    token= jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return {
+        "access_token":token,
+        "token_type":"bearer"
+    }
 
 @app.get("/bienvenidos", tags=['Inicio'])
 async def bienvenido():
@@ -116,7 +152,7 @@ async def agregar_usuarios(usuario:UsuarioBase):
     }
     
 @app.put("/v1/usuarios/{id}", tags = ['CRUD Usuarios'])
-async def actualizar_usuarios(id:int, usuario:UsuarioBase):
+async def actualizar_usuarios(id:int, usuario:UsuarioBase, usuario_actual:str = Depends(obtener_usuario_actual)):
     for user in usuarios:
         if user["id"] == id:
             
@@ -139,7 +175,7 @@ async def actualizar_usuarios(id:int, usuario:UsuarioBase):
     
     
 @app.delete("/v1/usuarios/{id}", tags = ['CRUD Usuarios'])
-async def eliminar_usuario(id:int, usuario_auth:str = Depends(verificar_peticion)):
+async def eliminar_usuario(id:int, usuario_actual: str = Depends(obtener_usuario_actual)):
     
     for user in usuarios:
         if user["id"] == id:
