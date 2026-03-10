@@ -47,13 +47,13 @@ async def listarCitas():
     }
     
 @app.get("/citas/{id}")
-async def consultarID(id:int):
+async def consultarID(id:int, informacion:cita):
     
     for cita in citas:
         if cita["id"] == id:
         
             return {
-                "cita_consultada":cita
+                "cita_consultada":informacion
             }
             
     raise HTTPException(status_code=404, detail="La cita que intenta consultar no existe")
@@ -76,7 +76,7 @@ async def crearCitas(cita:cita):
     }
 
 @app.delete("/citas/{id}")
-async def eliminarCitas(id:int):
+async def eliminarCitas(id:int, citas:cita):
     
     for cita in citas:
         if cita["id"] == id:
@@ -95,10 +95,18 @@ async def eliminarCitas(id:int):
 @app.put("/citas/{id}")
 async def confirmarCita(id:int, cita:cita):
     
-    for cita in citas:
+    for c in citas:
         
-        if cita.id == id:
+        if c["id"] == id:
             
-            cita.id = True
+            citas.update({
+                "confirmacion": cita.confirmacion
+            })
+            
+            return{
+                "mensaje":"Cita confirmada",
+                "datos":c,
+                "status":200
+            }
             
     raise HTTPException(status_code=404, detail="Cita no encontrada")
