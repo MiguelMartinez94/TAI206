@@ -1,10 +1,6 @@
 #Importaciones
-from fastapi import FastAPI, HTTPException, status, Depends
-import asyncio  
-from typing import Optional
-from pydantic import BaseModel, Field
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-import secrets
+from fastapi import FastAPI
+from app.routers import usuarios, misc
 
 #Inicialización del servidor
 app = FastAPI(
@@ -14,133 +10,23 @@ app = FastAPI(
     
 )
 
-usuarios = [
-    
-    {"id":1,"nombre":"Miguel","edad":"23"},
-    
-    {
-        "id":2,
-        "nombre":"Ximena",
-        "edad":"18"
-    },
-    
-    {
-        "id":3,
-        "nombre":"Joanna",
-        "edad":"20"
-    },
-]
+app.include_router(usuarios.router)
+app.include_router(misc.router)
+
+
+
 
 #Modelo de validacion Pydantic
 
-class UsuarioBase(BaseModel):
-    id: int = Field(...,gt=0, description="Identificador de usuario", example="1")
-    nombre: str = Field(...,min_length=3, max_length=50, description="Nombre del usuario")
-    edad: int = Field(..., ge=0, le=121, description="Edad validad 0 y 121")
 
 #Seguridad con HTTP Basic
 
-security = HTTPBasic()
-
-def verificar_peticion(credentials: HTTPBasicCredentials=Depends(security)):
-    usuario_auth= secrets.compare_digest(credentials.username, "admin")
-    pass_auth= secrets.compare_digest(credentials.password, "1234")
-    
-    if not (usuario_auth and pass_auth):
-        raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, detail="Sácate de aquí, no tienes autorización")
-
-    return credentials.username
 
 #Endpoints
 #@app.get('/', tags=['Inicio'])
 #async def holamundo():
 #    return {"mensaje":"Hola mundo con FastAPI"}
 
-@app.get("/bienvenidos", tags=['Inicio'])
-async def bienvenido():
-    return {"mensaje":"Bienvenidos a tu API REST"}
 
-@app.get("/v1/calificaciones", tags=['Asincronia'])
-async def calificaciones():
-    
-    await asyncio.sleep(5)
-    return {"mensaje":"Las califiación en TAI es 10"}
-
-@app.get("/v1/usuario/{id}", tags=['Parametro Obligatorio'])
-async def consultaUsuarios(id:int):
-    return {"Usuario encontrado":id}
-
-@app.get("/v1/usuarios_op/", tags=['Parametro opcional'])
-async def consultaOp(id:Optional[int]=None):
-    if id is not None:
-        for usuario in usuarios:
-            if usuario["id"] == id:
-                return {"usuario encontrado":id, "usuario":usuario}
-        return {"mensaje":"usuario no encontrado"}
-    else:
-        return {"mensaje":"no se proporcionó id"}
-    
-    
-    
-@app.get("/v1/usuarios/", tags=['CRUD Usuarios'])
-async def consultarUsuarios():
-    return usuarios
-    
-@app.post("/v1/usuarios/", tags=['CRUD Usuarios'])
-async def agregar_usuarios(usuario:UsuarioBase):
-    for usr in usuarios:
-        if usr["id"] == usuario.id:
-            
-            raise HTTPException(
-                status_code=400, #Un error del cliente
-                detail= "El usuario ya existe"
-            )
-        
-    usuarios.append(usuario)
-    return {
-        "mensaje":"Usuario agregado",
-        "datos":usuario,
-        "status":201
-    }
-    
-@app.put("/v1/usuarios/{id}", tags = ['CRUD Usuarios'])
-async def actualizar_usuarios(id:int, usuario:UsuarioBase):
-    for user in usuarios:
-        if user["id"] == id:
-            
-            user.update({
-                "nombre" : usuario.get("nombre"),
-                "edad" : usuario.get("edad")
-            })
-            
-            return{
-                "mensaje":"Usuario actualizado",
-                "datos":user,
-                "status": 200
-                
-            }
-        
-    raise HTTPException(
-        status_code=404,
-        detail="EL usuario no existe"
-        )
-    
-    
-@app.delete("/v1/usuarios/{id}", tags = ['CRUD Usuarios'])
-async def eliminar_usuario(id:int, usuario_auth:str = Depends(verificar_peticion)):
-    
-    for user in usuarios:
-        if user["id"] == id:
-            usuarios.remove(user)
-            
-            return{
-                "mensaje":"Usuario eliminado",
-                "status":200
-            }
-    
-    raise HTTPException(
-        status_code=404,
-        detail="El usuario no existe"
-    )
         
 
